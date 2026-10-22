@@ -1,0 +1,17 @@
+# Réécriture : tout passe par index.php
+RewriteEngine On
+
+# Sécurité : bloquer l'accès direct aux dossiers et fichiers sensibles
+RewriteRule ^(src|views|logs|vendor)(/|$) - [F,L]
+RewriteRule ^\.env - [F,L]
+RewriteRule ^(composer\.(json|lock)|README\.md)$ - [F,L]
+
+# Transmettre l'en-tête Authorization à PHP 
+RewriteCond %{HTTP:Authorization} .
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+# Tout le reste vers le front controller
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [L]
+

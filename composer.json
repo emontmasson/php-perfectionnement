@@ -1,0 +1,19 @@
+{
+    "name": "emontmasson/guess-game",
+    "description": "Jeu de devinettes en API REST",
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Elodie Montmasson",
+            "email": "contact@unidia.fr"
+        }
+    ],
+    "require": {
+        "tecnickcom/tcpdf": "^7.0",
+        "phpmailer/phpmailer": "^7.1"
+    }
+}
