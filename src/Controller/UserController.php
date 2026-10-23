@@ -4,13 +4,13 @@ namespace App\Controller;
 
 use App\Auth\LdapAuthentificator;
 use App\Auth\SessionManager;
-use App\Http\Traits\TraitementJson;
+use App\Http\Trait\TraitementJson;
 use App\Model\Joueur;
 use RuntimeException;
 
 final class UserController {
     
-    /*use TraitementJson;
+    use TraitementJson;
  
 
     public function login(): void
@@ -31,16 +31,14 @@ final class UserController {
             return;
         }
 
-        
-
-        // ...
-        $this->setJsonData(['message' => 'Connexion réussie', 'joueur' => [ ... ]]);
-    }*/
+        $this->setJsonData(['message' => 'Connexion réussie']);
+    }
 
     public function __construct(private readonly SessionManager $session) {}
 
-    public function login(string $login, string $mdp): void
+   /* public function login(string $login, string $mdp): void
     {
+
 
         try {
             // suppression des espaces du login
@@ -73,7 +71,7 @@ final class UserController {
             echo $e->getMessage();
         }
         
-    }
+    }*/
 
     public function logout(): void {
         $this->session->deconnecter();

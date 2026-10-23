@@ -18,11 +18,13 @@ trait TraitementJson
     {
         // php://input : flux brut du corps de la requête (contrairement à $_POST,
         // qui ne contient que les formulaires classiques, pas le JSON)
+
         $brut = file_get_contents('php://input');
 
         // Corps absent (false) ou vide : inutile de décoder
         // Sinon json_decode(..., true) renvoie un tableau associatif
         // (sans le true, on obtiendrait un objet stdClass)
+        
         $data = ($brut === false || $brut === '') ? [] : json_decode($brut, true);
 
         // json_decode renvoie null si le JSON est mal formé, et peut renvoyer

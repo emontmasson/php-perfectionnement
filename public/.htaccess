@@ -8,3 +8,4 @@ RewriteCond %{REQUEST_FILENAME} !-d
 
 # Sinon, on redirige absolument tout vers index.php
 RewriteRule ^ index.php [QSA,L]
+

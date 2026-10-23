@@ -11,16 +11,19 @@ use App\Repository\PartieRepository;
 
 final class GameController
 {
-    private PartieRepository $repository;
-    private Joueur $joueur;
     private Partie $partie;  
     private ModeJeu $modeJeu;
+    private readonly PartieRepository $partieRepository;
     
-    public function __construct(private readonly SessionManager $session, private readonly PartieRepository $partieRepository) {
-        $this->repository = new PartieRepository();
+    public function __construct(private readonly SessionManager $session) {
+        $this->partieRepository = new PartieRepository();
+        
     }
 
-    private function verifierModeValide(int $mode): void {
+
+
+    private function verifierModeValide(string $mode): void {
+        $mode = (int) $mode;
         $mode = ModeJeu::tryFrom($mode);
 
         if($mode == null) {
@@ -41,17 +44,6 @@ final class GameController
         }
 
         $this->partie = $partie;
-    }
-
-    private function verifierJoueurConnecte() : void{
-        $joueur = $this->session->getJoueur();
-
-        if(!$joueur) {
-            echo "Joueur introuvable";
-            return;
-        }
-
-        $this->joueur = $joueur;
     }
 
     private function verifierIndiceValide(string $indice): ?Indice {
@@ -79,16 +71,15 @@ final class GameController
     }
 
     public function show(): void {
-        echo "show";
+        echo "test pour les routes";
     }
 
-    public function creer(int $mode): void
+    public function creer(string $mode): void
     {
-        $this->verifierModeValide($mode);
-        
-        $this->verifierJoueurConnecte();
 
-        $partie = $this->joueur->demarrerPartie($this->modeJeu);
+        $this->verifierModeValide($mode);
+
+        $partie = $this->session?->getJoueur()?->demarrerPartie($this->modeJeu);
 
         $this->session->setPartieCourante($partie);
 
@@ -98,7 +89,6 @@ final class GameController
 
     public function donnerIndice(string $indice):void {
         
-        $this->verifierJoueurConnecte();
         
         $this->verifierPartieCourante();
 
@@ -117,7 +107,6 @@ final class GameController
     }
 
     public function fairePropososer():void {
-        $this->verifierJoueurConnecte();
         
         $this->verifierPartieCourante();
 
@@ -127,10 +116,8 @@ final class GameController
         echo $this->partie->proposer()."<br>";
     }
 
-    public function proposer(int $proposition):void {
+    public function proposer(string $proposition):void {
         
-
-        $this->verifierJoueurConnecte();
         
         $this->verifierPartieCourante();
         

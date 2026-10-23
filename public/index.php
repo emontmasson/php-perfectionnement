@@ -39,12 +39,7 @@ $routeur->add('POST', '/logout', UserController::class, 'logout');
 // Démarre une nouvelle partie et la place en session.
 // Corps : {"mode": 1}  (1 = joueur devine, 2 = programme devine)
 // Réponses : 201, 400 (mode invalide), 401
-$routeur->add('POST', '/game', GameController::class, 'create');
-
-// État de la partie en cours (mode, nb de tentatives, terminée ou non).
-// Ne révèle jamais le nombre secret.
-// Réponses : 200, 404 (aucune partie), 401
-$routeur->add('GET', '/game', GameController::class, 'show');
+$routeur->add('POST', '/game/{mode}', GameController::class, 'creer', false);
 
 // MODE 1 UNIQUEMENT : le joueur propose un nombre, le programme répond par un indice.
 // Corps : {"proposition": 42}
@@ -52,16 +47,19 @@ $routeur->add('GET', '/game', GameController::class, 'show');
 //            404 (aucune partie), 409 (partie d'un autre mode), 401
 $routeur->add('POST', '/game/guess', GameController::class, 'proposer');
 
+
 // MODE 2 UNIQUEMENT : le programme propose un nombre (calculé depuis ses bornes).
 // Pas de corps.
 // Réponses : 200 ({"proposition": 50}), 404 (aucune partie), 409 (partie d'un autre mode), 401
-$routeur->add('GET', '/game/proposal', GameController::class, 'proposal');
+$routeur->add('GET', '/game/proposal', GameController::class, 'faireProposer');
+
+
 
 // MODE 2 UNIQUEMENT : le joueur donne son indice sur la dernière proposition du programme.
 // Corps : {"indice": "plus_grand"}  (plus_grand | plus_petit | trouve)
 // Met à jour les bornes du programme. Si "trouve", la partie est terminée et enregistrée.
 // Réponses : 200, 400 (indice invalide), 404, 409, 401
-$routeur->add('POST', '/game/hint', GameController::class, 'hint');
+$routeur->add('POST', '/game/hint', GameController::class, 'donnerIndice');
 
 // ----- Scores (lus en base) -----
 
