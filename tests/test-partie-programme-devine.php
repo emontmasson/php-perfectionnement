@@ -29,9 +29,8 @@ while (!$partie->estTerminee()) {
             $indice = Indice::TROUVE;
              break;
     }
-    echo $indice->value."<br/>";
-    $partie->setReponseJoueur($indice);
-    $partie->jouer($proposition);
+   
+    $partie->regenererBorne($indice);
 
     echo "Programme propose $proposition → joueur répond {$indice->value}<br/>";
 }

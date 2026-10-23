@@ -1,16 +1,20 @@
-# Réécriture : tout passe par index.php
+# Devinette / .htaccess (racine)
 RewriteEngine On
 
-# Sécurité : bloquer l'accès direct aux dossiers et fichiers sensibles
-RewriteRule ^(src|logs|vendor)(/|$) - [F,L]
+# 1. Sécurité : bloquer l'accès aux dossiers et fichiers sensibles
+RewriteRule ^(src|logs|vendor|tests)(/|$) - [F,L]
 RewriteRule ^\.env - [F,L]
 RewriteRule ^(composer\.(json|lock)|README\.md)$ - [F,L]
 
-# Transmettre l'en-tête Authorization à PHP (utile pour la suite)
+# 2. Transmettre le header Authorization (essentiel pour les API / Bearer / Basic Auth)
 RewriteCond %{HTTP:Authorization} .
 RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-# Tout le reste vers le front controller
+# 3. Ne pas réécrire si la ressource demandée existe déjà dans public/ (ex: css, js, images)
+RewriteCond %{DOCUMENT_ROOT}/public/$1 -f
+RewriteRule ^(.*)$ public/$1 [L]
+
+# 4. Rediriger tout le reste vers public/index.php
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^ index.php [L]
+RewriteRule ^ public/index.php [QSA,L]
