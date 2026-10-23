@@ -2,7 +2,7 @@
 RewriteEngine On
 
 # 1. Sécurité : bloquer l'accès aux dossiers et fichiers sensibles
-RewriteRule ^(src|logs|vendor|tests)(/|$) - [F,L]
+RewriteRule ^(src|logs|vendor)(/|$) - [F,L]
 RewriteRule ^\.env - [F,L]
 RewriteRule ^(composer\.(json|lock)|README\.md)$ - [F,L]
 

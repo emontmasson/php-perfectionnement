@@ -40,4 +40,8 @@ final class GameController
         
 
     }
+
+    public function show(): void {
+        echo "test pour les routes";
+    }
 }
