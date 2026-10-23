@@ -20,7 +20,9 @@ final class UserController {
         $mdp   = (string) ($data['password'] ?? '');
 
         if ($login === '' || $mdp === '') {
-            $this->sendErrorJson('Login et mot de passe requis');
+
+            $this->sendErrorJson('Login et mot de passe requis',400);
+            
             return;
         }
 
@@ -31,7 +33,15 @@ final class UserController {
             return;
         }
 
-        $this->setJsonData(['message' => 'Connexion réussie']);
+         // sinon instancie un joueur
+        $joueur = new Joueur(uid: $infos['uid'], nom: $infos['nom'], login: $login, prenom: $infos['prenom']);
+
+        // on met le joueur en session
+        $this->session->connecter($joueur);
+
+
+        $this->setJsonData(['message' => "Connexion réussie {$joueur}"]);
+        
     }
 
     public function __construct(private readonly SessionManager $session) {}

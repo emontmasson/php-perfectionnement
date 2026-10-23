@@ -1,7 +1,12 @@
-<?php declare(strict_types=1);
+<?php
+declare(strict_types=1);
+
 namespace App\Pdf;
 
-final class ScoresPdf
+use TCPDF;
+
+final class ScoresPdf 
 {
-    // TODO: implémenter pendant le TP. Conserver le nom de classe.
+    
 }
+
