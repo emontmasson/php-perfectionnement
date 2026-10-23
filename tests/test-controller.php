@@ -8,6 +8,7 @@ use App\Model\Enum\ModeJeu;
 use App\Model\Enum\Borne;
 use App\Model\Enum\Indice;
 use App\Model\Joueur;
+use App\Repository\PartieRepository;
 
 
 /*
@@ -21,7 +22,7 @@ $sessionManager = new SessionManager();
 
 $sessionManager->connecter($joueur);
 
-$gameController = new GameController($sessionManager);
+$gameController = new GameController($sessionManager, new PartieRepository());
 
 $gameController->creer(2);
 
@@ -30,4 +31,8 @@ $gameController->fairePropososer();
 $gameController->donnerIndice("plus_grand");
 
 $gameController->fairePropososer();
+
+$gameController->donnerIndice("trouve");
+
+
 

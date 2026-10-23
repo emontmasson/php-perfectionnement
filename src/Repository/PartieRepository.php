@@ -32,24 +32,22 @@ class PartieRepository
         $this->executer(function () use ($partie) {
             if ($partie->getId() === null) {
                 $stmt = $this->pdo->prepare(
-                    "INSERT INTO {$this->tableName} (joueur_id, mode, nb_tentatives, terminee)
-                    VALUES (:joueurId, :modeJeu, :nbTentatives, :terminee)"
+                    "INSERT INTO {$this->tableName} (joueur_id, mode, nb_tentatives)
+                    VALUES (:joueurId, :modeJeu, :nbTentatives)"
                 );
                 $stmt->execute([
                     'joueurId'     => $partie->getJoueur()->getUid(),
                     'modeJeu'      => $partie->getMode()->value,
-                    'nbTentatives' => $partie->getNbTentatives(),
-                    'terminee'     => (int) $partie->estTerminee(),
+                    'nbTentatives' => $partie->getNbTentatives()
                 ]);
                 $partie->setId((int) $this->pdo->lastInsertId());
             } else {
                 $stmt = $this->pdo->prepare(
                     "UPDATE {$this->tableName}
-                    SET nb_tentatives = :nbTentatives, terminee = :terminee WHERE id = :id"
+                    SET nb_tentatives = :nbTentatives WHERE id = :id"
                 );
                 $stmt->execute([
                     'nbTentatives' => $partie->getNbTentatives(),
-                    'terminee'     => (int) $partie->estTerminee(),
                     'id'           => $partie->getId(),
                 ]);
 

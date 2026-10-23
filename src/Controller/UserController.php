@@ -75,6 +75,10 @@ final class UserController {
         
     }
 
+    public function logout(): void {
+        $this->session->deconnecter();
+    }
+
     
     
 }

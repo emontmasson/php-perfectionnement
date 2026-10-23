@@ -7,14 +7,18 @@ use App\Model\Enum\Indice;
 use App\Model\Enum\ModeJeu;
 use App\Model\Joueur;
 use App\Model\Partie;
+use App\Repository\PartieRepository;
 
 final class GameController
 {
+    private PartieRepository $repository;
     private Joueur $joueur;
     private Partie $partie;  
     private ModeJeu $modeJeu;
     
-    public function __construct(private readonly SessionManager $session) {}
+    public function __construct(private readonly SessionManager $session, private readonly PartieRepository $partieRepository) {
+        $this->repository = new PartieRepository();
+    }
 
     private function verifierModeValide(int $mode): void {
         $mode = ModeJeu::tryFrom($mode);
@@ -69,6 +73,15 @@ final class GameController
         }
     }
 
+    private function finPartie() {
+        $this->session->terminerPartie();
+        $this->partieRepository->save($this->partie);
+    }
+
+    public function show(): void {
+        echo "show";
+    }
+
     public function creer(int $mode): void
     {
         $this->verifierModeValide($mode);
@@ -83,7 +96,7 @@ final class GameController
     }
 
 
-    public function donnerIndice(string $indice) {
+    public function donnerIndice(string $indice):void {
         
         $this->verifierJoueurConnecte();
         
@@ -93,12 +106,17 @@ final class GameController
         
         $this->verifierActionValidePartie(ModeJeu::PROGRAMME_DEVINE);
         
-        // on donne l'indice à la partie
+        if($indiceJeu === Indice::TROUVE) {
+            echo "j'ai gagné";
+            $this->finPartie();
+        }
+        else {
+            $this->partie->regenererBorne($indiceJeu);
+        }
 
-        $this->partie->regenererBorne($indiceJeu);
     }
 
-    public function fairePropososer() {
+    public function fairePropososer():void {
         $this->verifierJoueurConnecte();
         
         $this->verifierPartieCourante();
@@ -109,7 +127,7 @@ final class GameController
         echo $this->partie->proposer()."<br>";
     }
 
-    public function proposer(int $proposition) {
+    public function proposer(int $proposition):void {
         
 
         $this->verifierJoueurConnecte();
@@ -118,7 +136,15 @@ final class GameController
         
         $this->verifierActionValidePartie(ModeJeu::JOUEUR_DEVINE);
 
-        echo $this->partie->jouer($proposition)->value."<br>"; 
+        $resultat = $this->partie->jouer($proposition);
+        if($resultat == Indice::TROUVE) {
+            echo "Vous avez gagné";
+            $this->finPartie();
+        }
+        else {
+            echo $this->partie->jouer($proposition)->value."<br>"; 
+        }
+        
 
     }
 }

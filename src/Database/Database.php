@@ -17,7 +17,6 @@ final class Database
             joueur_id VARCHAR(255) NOT NULL,
             mode INT NOT NULL,
             nb_tentatives INT NOT NULL,
-            terminee TINYINT(1) NOT NULL DEFAULT 0,
             date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     }

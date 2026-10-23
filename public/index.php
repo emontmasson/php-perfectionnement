@@ -50,7 +50,7 @@ $routeur->add('GET', '/game', GameController::class, 'show');
 // Corps : {"proposition": 42}
 // Réponses : 200 ({"indice": "plus_grand"}), 400 (valeur invalide ou hors bornes),
 //            404 (aucune partie), 409 (partie d'un autre mode), 401
-$routeur->add('POST', '/game/guess', GameController::class, 'guess');
+$routeur->add('POST', '/game/guess', GameController::class, 'proposer');
 
 // MODE 2 UNIQUEMENT : le programme propose un nombre (calculé depuis ses bornes).
 // Pas de corps.
