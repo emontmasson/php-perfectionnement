@@ -71,6 +71,6 @@ $routeur->add('GET', '/scores', ScoreController::class, 'list');
 
 // Génère le PDF des scores (TP11), éventuellement envoyé par mail.
 // Réponses : 200 (PDF), 401
-$routeur->add('GET', '/scores/pdf', ScoreController::class, 'pdf');
+$routeur->add('GET', '/scores/pdf', ScoreController::class, 'pdf', false);
 
 $routeur->processRequest();
