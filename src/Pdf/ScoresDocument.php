@@ -24,5 +24,16 @@ final class ScoresDocument extends TCPDF
             0, 0, 'C'
         );
     }
+
+     /*
+    private Joueur  $joueur ;
+
+    
+    public function Header(): void
+    {
+        $this->SetFont('helvetica', 'B', 12);
+        $this->Cell(0, 10, 'Scores de ' . $joueur, 0, 1, 'C');
+    }
+    */
 }
 

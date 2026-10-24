@@ -1,144 +1,117 @@
-<?php 
+<?php
 declare(strict_types=1);
-namespace App\Controller;
+
+namespace App\Http;
 
 use App\Auth\SessionManager;
-use App\Model\Enum\Indice;
-use App\Model\Enum\ModeJeu;
-use App\Model\Joueur;
-use App\Model\Partie;
-use App\Repository\PartieRepository;
 use App\Http\Trait\TraitementJson;
+use App\Log\FileLogger;
 
-final class GameController
+/**
+ * Associe une requête (méthode + chemin) à une action de contrôleur.
+ * Gère aussi l'authentification et les erreurs de routage (401, 404, 405, 500).
+ *
+ * Les routes sans paramètre (/game/guess) sont toujours testées AVANT
+ * les routes avec paramètre (/game/{mode}) : l'ordre de déclaration
+ * n'a donc pas d'importance.
+ */
+final class Router
 {
-    private Partie $partie;  
-    private ModeJeu $modeJeu;
-    private readonly PartieRepository $partieRepository;
-    use traitementJson;
-    
-    public function __construct(private readonly SessionManager $session) {
-        $this->partieRepository = new PartieRepository();
-        
-    }
+    // Le trait est utilisable ici : Router est une classe.
+    // On récupère donc setJsonData() et sendErrorJson() pour les erreurs.
+    use TraitementJson;
 
+    /** Routes sans accolades, testées en premier */
+    private array $routesStatiques = [];
 
+    /** Routes avec accolades ({id}, {mode}...), testées ensuite */
+    private array $routesParametrees = [];
 
-    private function verifierModeValide(string $mode): void {
-        $mode = (int) $mode;
-        $mode = ModeJeu::tryFrom($mode);
+    public function __construct(
+        private readonly SessionManager $session
+    ) {}
 
-        if($mode == null) {
-            $this->sendErrorJson("veuillez préciser un mode de jeu valide", 400);
-            exit;
-        }
+    /**
+     * Déclare une route.
+     *
+     * @param string $methode       Méthode HTTP (GET, POST...)
+     * @param string $motif         Chemin, avec paramètres éventuels : /games/{id}
+     * @param string $controleur    Nom complet de la classe du contrôleur
+     * @param string $action        Méthode du contrôleur à appeler
+     * @param bool   $authRequise   true si l'utilisateur doit être connecté
+     */
+    public function add(
+        string $methode,
+        string $motif,
+        string $controleur,
+        string $action,
+        bool $authRequise = true,
+    ): void {
+        $route = [$methode, $motif, $controleur, $action, $authRequise];
 
-        $this->modeJeu = $mode;
-        
-    }
-
-    private function verifierPartieCourante(): void {
-        $partie = $this->session->getPartieCourante();
-
-        if(!$partie) {
-            $this->sendErrorJson( "Partie introuvable", 404);
-            exit;
-        }
-
-        
-    }
-
-    private function verifierIndiceValide(string $indice): ?Indice {
-        $indice =  Indice::tryFrom($indice);
-
-        if($indice == null) {
-            $this->sendErrorJson( "veuillez préciser un indice valide", 400);
-            
-        }
-        return $indice;
-    }
-
-    private function verifierActionValidePartie(ModeJeu $modeJeu): void {
-        if( $this->session->getPartieCourante()->getMode() != $modeJeu) {
-            $this->sendErrorJson( "Vous ne pouvez effectuer cette action dans ce mode de jeu", 400);
-            exit;
+        // Présence d'accolades : route paramétrée, sinon route statique
+        if (str_contains($motif, '{')) {
+            $this->routesParametrees[] = $route;
+        } else {
+            $this->routesStatiques[] = $route;
         }
     }
 
-    private function finPartie() {
-        $this->partieRepository->save( $this->session->getPartieCourante());
-        $this->session->terminerPartie();
-        
-    }
-
-    public function show(): void {
-        echo "test pour les routes";
-    }
-
-    public function creer(string $mode): void
+    /**
+     * Analyse la requête courante et appelle le bon contrôleur.
+     */
+    public function processRequest(): void
     {
+        try {
+            $this->session->demarrer();
 
-        $this->verifierModeValide($mode);
+            $methode = $_SERVER['REQUEST_METHOD'];
 
-        $partie = $this->session->getJoueur()->demarrerPartie($this->modeJeu);
+            // Chemin seul (sans ?query), sans "/" final, "/" si vide
+            $chemin = rtrim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/') ?: '/';
 
-        $this->session->setPartieCourante($partie);
+            // Les routes statiques passent toujours avant les routes paramétrées
+            $toutesLesRoutes = [...$this->routesStatiques, ...$this->routesParametrees];
 
-        $this->setJsonData(['message' => "Partie créée en mode " . $partie->getMode()->name], 201);
-    }
+            $cheminTrouve = false;
 
+            foreach ($toutesLesRoutes as [$routeMethode, $motif, $controleur, $action, $authRequise]) {
+                // Transforme /games/{id} en regex avec groupe nommé
+                $regex = '#^' . preg_replace('#\{(\w+)\}#', '(?P<$1>[^/]+)', $motif) . '$#';
 
-    public function donnerIndice():void {
-        
-        $data  = $this->getJsonData();
-        $indice = trim((string) ($data['indice'] ?? ''));    
+                if (!preg_match($regex, $chemin, $correspondances)) {
+                    continue;
+                }
 
-        $this->verifierPartieCourante();
+                // Le chemin existe, mais peut-être pas avec cette méthode
+                $cheminTrouve = true;
+                if ($routeMethode !== $methode) {
+                    continue;
+                }
 
-        $indiceJeu = $this->verifierIndiceValide($indice);
-        
-        $this->verifierActionValidePartie(ModeJeu::PROGRAMME_DEVINE);
-        
-        if($indiceJeu === Indice::TROUVE) {
-            $this->setJsonData(['message' => "j'ai gagné"]);
-            $this->finPartie();
+                // Garde d'authentification : simple test, pas de middleware
+                if ($authRequise && !$this->session->estConnecte()) {
+                    $this->sendErrorJson('Non authentifié', 401);
+                    return;
+                }
+
+                // Ne garde que les groupes nommés (ex. 'id'), pas les index numériques
+                $parametres = array_filter($correspondances, 'is_string', ARRAY_FILTER_USE_KEY);
+
+                // Instancie le contrôleur et appelle l'action avec les paramètres d'URL
+                (new $controleur($this->session))->$action(...$parametres);
+                return;
+            }
+
+            // Aucune route n'a abouti
+            $cheminTrouve
+                ? $this->sendErrorJson('Méthode non autorisée', 405)
+                : $this->sendErrorJson('Route introuvable', 404);
+
+        } catch (\Throwable $e) {
+            // Dernier filet de sécurité : on logue le détail, le client reçoit un message générique
+            (new FileLogger())->error($e->getMessage());
+            $this->sendErrorJson('Erreur interne', 500);
         }
-        else {
-             $this->session->getPartieCourante()->regenererBorne($indiceJeu);
-        }
-
-    }
-
-    public function fairePropososer():void {
-        
-        $this->verifierPartieCourante();
-
-        $this->verifierActionValidePartie(ModeJeu::PROGRAMME_DEVINE);
-
-        $this->setJsonData(['proposition' =>  $this->session->getPartieCourante()->proposer()]);
-   
-    }
-
-    public function proposer():void {
-
-        
-        $data  = $this->getJsonData();
-        $proposition = (int) trim((string) ($data['proposition'] ?? ''));
-        
-        $this->verifierPartieCourante();
-        
-        $this->verifierActionValidePartie(ModeJeu::JOUEUR_DEVINE);
-
-        $resultat =  $this->session->getPartieCourante()->jouer($proposition);
-        if($resultat == Indice::TROUVE) {
-            $this->setJsonData(['message' => "Vous avez gagné"]);
-            $this->finPartie();
-        }
-        else {
-            $this->setJsonData(['indice' => $this->session->getPartieCourante()->jouer($proposition)->value]);
-           
-        }
-        
-
     }
 }
